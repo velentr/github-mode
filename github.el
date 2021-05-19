@@ -131,6 +131,19 @@
            (json-parse-buffer))))
     (gh--parse-pr-query json-data)))
 
+(defun gh--insert-pr-data (pr)
+  "Insert PR data into the current buffer."
+  (insert (format "%6d" (car pr)) " ")
+  (insert (cadr pr) "\n"))
+
+(defun gh-open-buffer ()
+  "Open a new github-mode buffer."
+  (interactive)
+  (let ((pr-data (gh--load-prs))
+        (buffer (get-buffer-create "*github-prs*")))
+    (switch-to-buffer buffer)
+    (seq-do 'gh--insert-pr-data pr-data)))
+
 (provide 'github)
 
 ;;; github.el ends here
