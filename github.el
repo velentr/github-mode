@@ -131,10 +131,43 @@
            (json-parse-buffer))))
     (gh--parse-pr-query json-data)))
 
+(defun gh--strip-author (author)
+  "Strip the -skydio suffix from the AUTHOR."
+  (substring author 0 -7))
+
+(defun gh--format-pr-title (title author)
+  "Format TITLE and AUTHOR to a suitable fixed-width format for the pr buffer."
+  (let ((width 70)
+        (titleauthor (format "%s  (%s)" title (gh--strip-author author))))
+    (if (< (length titleauthor) width)
+        (format "%-70s" titleauthor)
+      (concat (substring titleauthor 0 (- width 3)) "..."))))
+
+(defun gh--format-labels (labels)
+  "Format LABELS for inserting into the pr buffer."
+  (mapconcat 'identity labels ","))
+
 (defun gh--insert-pr-data (pr)
   "Insert PR data into the current buffer."
-  (insert (format "%6d" (car pr)) " ")
-  (insert (cadr pr) "\n"))
+  (let* ((number (car pr))
+         (nrest (cdr pr))
+         (title (car nrest))
+         (trest (cdr nrest))
+         (author (car trest))
+         (arest (cdr trest))
+         (approvals (car arest))
+         (aprest (cdr arest))
+         (in-mergequeue (car aprest))
+         (mrest (cdr aprest))
+         (size (car mrest))
+         (srest (cdr mrest))
+         (labels (car srest)))
+  (insert (format "%6d" number) " "
+          (gh--format-pr-title title author) " "
+          (format "[%2d]" approvals) " "
+          (format "[%s]" (if in-mergequeue "X" " ")) " "
+          (format "%3s" size) " "
+          (gh--format-labels labels) "\n")))
 
 (defun gh-open-buffer ()
   "Open a new github-mode buffer."
