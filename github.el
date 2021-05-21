@@ -301,6 +301,15 @@
     (switch-to-buffer buffer)
     (gh--refresh-pr pr-number)))
 
+(defun gh-select-pr-summary ()
+  "Open a pr summary for the pr specified in the line at point."
+  (interactive)
+  (let* ((pr-oneline (thing-at-point 'line))
+         (pr-number (string-to-number pr-oneline)))
+    (if (eq pr-number 0)  ;; user selected an invalid line
+        nil
+      (gh-open-pr-summary pr-number))))
+
 (provide 'github)
 
 ;;; github.el ends here
