@@ -173,12 +173,18 @@
           (format "%3s" size) " "
           (gh--format-labels labels) "\n")))
 
-(defun gh-open-buffer ()
-  "Open a new github-mode buffer."
+(defun gh-refresh-buffer ()
+  "Refresh the github data in the current buffer."
   (interactive)
-  (let ((pr-data (gh--load-prs))
-        (buffer (get-buffer-create "*github-prs*")))
-    (switch-to-buffer buffer)
+  (let ((name (buffer-name)))
+    (cond
+     ((equal name "*github-prs*")
+      (gh--refresh-prs)))))
+
+(defun gh--refresh-prs ()
+  "Refresh the current buffer with toplevel pr data."
+  (erase-buffer)
+  (let ((pr-data (gh--load-prs)))
     (insert "* outgoing\n\n")
     (seq-do 'gh--insert-pr-data
             (seq-filter (lambda (pr)
@@ -189,6 +195,13 @@
             (seq-filter (lambda (pr)
                           (not (equal gh-user (caddr pr))))
                         pr-data))))
+
+(defun gh-open-buffer ()
+  "Open a new github-mode buffer."
+  (interactive)
+  (let ((buffer (get-buffer-create "*github-prs*")))
+    (switch-to-buffer buffer)
+    (gh--refresh-prs)))
 
 (provide 'github)
 
