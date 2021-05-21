@@ -10,22 +10,24 @@
 
 ;;; Code:
 
+(defvar gh-owner
+  "Skydio"
+  "Owner of the github repo to query for reviews.")
+
 (defvar gh-repo
-  "Skydio/aircam"
-  "Github owner/repo to query for reviews.")
+  "aircam"
+  "Github repo to query for reviews.")
 
 (defvar gh-user
   "brian-kubisiak-skydio"
   "Github account username.")
 
-(defun gh-pr-query ()
+(defun gh-prs-query ()
   "Retrieve the graphql query to use for getting the pr overview."
   ;; TODO: get test results too
-  (concat
+  (format
    "query {
-     search(last:100, query:\"is:pr is:open involves:@me repo:"
-   gh-repo
-   "\", type:ISSUE) {
+     search(last:100, query:\"is:pr is:open involves:@me repo:%s/%s\", type:ISSUE) {
       edges {
        node {
        ... on PullRequest {
@@ -52,7 +54,38 @@
        }
       }
      }
-    }"))
+    }" gh-owner gh-repo))
+
+(defun gh-pr-query (number)
+  "Retrieve the graphql query for getting an overview of a specific pr NUMBER."
+  (format
+   "query {
+     repository(owner:\"%s\", name:\"%s\") {
+      pullRequest(number:%d) {
+       title
+       body
+       baseRef {
+        name
+        target {
+         oid
+        }
+       }
+       author {
+        login
+       }
+       files(first:100) {
+        edges {
+         node {
+          path
+          additions
+          deletions
+         }
+        }
+       }
+      }
+     }
+    }" gh-owner gh-repo number))
+
 
 (defun gh--parse-pr-query (query)
   "Parse the QUERY data from a graphql pr request."
@@ -125,15 +158,22 @@
           (json-parse-buffer)
         (kill-buffer query-buffer)))))
 
+(defun gh--load (query)
+  "Load the data from github using the given graphql QUERY."
+  (with-temp-buffer
+    (call-process "gh" nil t nil "api" "graphql" "-f" (concat "query=" query))
+    (goto-char (point-min))
+    (json-parse-buffer)))
+
 (defun gh--load-prs ()
   "Query the graphql api for pr data."
-  (let ((json-data
-         (with-temp-buffer
-           (call-process "gh" nil t nil "api" "graphql" "-f"
-                         (concat "query=" (gh-pr-query)))
-           (goto-char (point-min))
-           (json-parse-buffer))))
+  (let ((json-data (gh--load (gh-prs-query))))
     (gh--parse-pr-query json-data)))
+
+(defun gh--load-pr (number)
+  "Query the graphql api for an overview of a specific pr NUMBER."
+  (let ((json-data (gh--load (gh-pr-query number))))
+    json-data))
 
 (defun gh--format-pr-title (title author)
   "Format TITLE and AUTHOR to a suitable fixed-width format for the pr buffer."
