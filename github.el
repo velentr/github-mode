@@ -14,6 +14,10 @@
   "Skydio/aircam"
   "Github owner/repo to query for reviews.")
 
+(defvar gh-user
+  "brian-kubisiak-skydio"
+  "Github account username.")
+
 (defun gh-pr-query ()
   "Retrieve the graphql query to use for getting the pr overview."
   ;; TODO: get test results too
@@ -175,7 +179,16 @@
   (let ((pr-data (gh--load-prs))
         (buffer (get-buffer-create "*github-prs*")))
     (switch-to-buffer buffer)
-    (seq-do 'gh--insert-pr-data pr-data)))
+    (insert "* outgoing\n\n")
+    (seq-do 'gh--insert-pr-data
+            (seq-filter (lambda (pr)
+                          (equal gh-user (caddr pr)))
+                        pr-data))
+    (insert "\n\n* incoming\n\n")
+    (seq-do 'gh--insert-pr-data
+            (seq-filter (lambda (pr)
+                          (not (equal gh-user (caddr pr))))
+                        pr-data))))
 
 (provide 'github)
 
