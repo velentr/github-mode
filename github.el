@@ -135,14 +135,10 @@
            (json-parse-buffer))))
     (gh--parse-pr-query json-data)))
 
-(defun gh--strip-author (author)
-  "Strip the -skydio suffix from the AUTHOR."
-  (substring author 0 -7))
-
 (defun gh--format-pr-title (title author)
   "Format TITLE and AUTHOR to a suitable fixed-width format for the pr buffer."
   (let ((width 70)
-        (titleauthor (format "%s  (%s)" title (gh--strip-author author))))
+        (titleauthor (format "%s  (%s)" title author)))
     (if (< (length titleauthor) width)
         (format "%-70s" titleauthor)
       (concat (substring titleauthor 0 (- width 3)) "..."))))
