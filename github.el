@@ -263,7 +263,12 @@
   (let ((name (buffer-name)))
     (cond
      ((equal name "*github-prs*")
-      (gh--refresh-prs)))))
+      (gh--refresh-prs))
+     ((string-match
+       (rx "*github-pr-" (group (one-or-more digit)) "*")
+       name)
+      (gh--refresh-pr (string-to-number (match-string 1 name))))
+     (t (message "unrecognized github buffer")))))
 
 (defun gh--refresh-prs ()
   "Refresh the current buffer with toplevel pr data."
