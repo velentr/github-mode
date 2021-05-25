@@ -260,7 +260,8 @@
 (defun gh-refresh-buffer ()
   "Refresh the github data in the current buffer."
   (interactive)
-  (let ((name (buffer-name)))
+  (let ((inhibit-read-only t)
+        (name (buffer-name)))
     (cond
      ((equal name "*github-prs*")
       (gh--refresh-prs))
@@ -269,6 +270,17 @@
        name)
       (gh--refresh-pr (string-to-number (match-string 1 name))))
      (t (message "unrecognized github buffer")))))
+
+(defun gh-move-up-buffer ()
+  "Move 'up' one level in the page heirarchy."
+  (interactive)
+  (let ((name (buffer-name)))
+    (cond
+     ((string-match
+       (rx "*github-pr-" (one-or-more digit) "*")
+       name)
+      (gh-open-buffer))
+     (t (message (format "can't move up from %s" name))))))
 
 (defun gh--refresh-prs ()
   "Refresh the current buffer with toplevel pr data."
@@ -296,7 +308,8 @@
   (interactive)
   (let ((buffer (get-buffer-create "*github-prs*")))
     (switch-to-buffer buffer)
-    (gh--refresh-prs)))
+    (gh--refresh-prs)
+    (github-mode)))
 
 (defun gh-open-pr-summary (pr-number)
   "Open a summary of PR-NUMBER in a new buffer."
@@ -304,7 +317,8 @@
   (let* ((pr-buffer-name (format "*github-pr-%d*" pr-number))
          (buffer (get-buffer-create pr-buffer-name)))
     (switch-to-buffer buffer)
-    (gh--refresh-pr pr-number)))
+    (gh--refresh-pr pr-number)
+    (github-mode)))
 
 (defun gh-select-pr-summary ()
   "Open a pr summary for the pr specified in the line at point."
@@ -314,6 +328,21 @@
     (if (eq pr-number 0)  ;; user selected an invalid line
         nil
       (gh-open-pr-summary pr-number))))
+
+
+(defvar github-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-x RET") 'gh-select-pr-summary)
+    (define-key map (kbd "C-x u") 'gh-move-up-buffer)
+    map)
+  "Keymap for github-mode.")
+
+(define-minor-mode github-mode
+  "Minor mode for navigating github reviews in Emacs."
+  :init-value nil
+  :lighter " github"
+  :keymap github-mode-map)
+
 
 (provide 'github)
 
