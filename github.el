@@ -308,7 +308,8 @@
   (interactive)
   (let ((buffer (get-buffer-create "*github-prs*")))
     (switch-to-buffer buffer)
-    (gh--refresh-prs)
+    (if (= (buffer-size buffer) 0)
+        (gh--refresh-prs))
     (github-mode)))
 
 (defun gh-open-pr-summary (pr-number)
@@ -317,7 +318,8 @@
   (let* ((pr-buffer-name (format "*github-pr-%d*" pr-number))
          (buffer (get-buffer-create pr-buffer-name)))
     (switch-to-buffer buffer)
-    (gh--refresh-pr pr-number)
+    (if (= (buffer-size buffer) 0)
+        (gh--refresh-pr pr-number))
     (github-mode)))
 
 (defun gh-select-pr-summary ()
