@@ -339,8 +339,37 @@
     map)
   "Keymap for github-mode.")
 
+(defface github-mode-ok-face
+  '((t :foreground "green"))
+  "Green face for highlighting mq+1, cr+2, etc."
+  :group 'github-mode)
+
+(defface github-mode-warn-face
+  '((t :foreground "yellow"))
+  "Yellow face for highlighting warnings like no crs, large changes, etc."
+  :group 'github-mode)
+
+(defface github-mode-err-face
+  '((t :foreground "red"))
+  "Red face for severe warnings like XXL changes, etc."
+  :group 'github-mode)
+
 (define-derived-mode github-mode special-mode "github"
-  "Major mode for github reviews in Emacs.")
+  "Major mode for github reviews in Emacs."
+  (setq-local
+   font-lock-defaults
+   '((("^* outgoing$" . font-lock-function-name-face)
+      ("^* incoming$" . font-lock-function-name-face)
+      ("^ *[0-9]+" . font-lock-comment-face)
+      ("\\[\\( [1-9]\\|[1-9][0-9]\\)\\] \\[[ X]\\] " 1 'github-mode-ok-face)
+      ("\\[\\( 0\\)\\] \\[[ X]\\] " 1 'github-mode-warn-face)
+      ("\\[[ 0-9]\\{2\\}\\] \\[\\(X\\)\\] " 1 'github-mode-ok-face)
+      ("\\[[ X]\\] \\( XS\\|  S\\)" 1 'github-mode-ok-face)
+      ("\\[[ X]\\] \\(  M\\|  L\\)" 1 'github-mode-warn-face)
+      ("\\[[ X]\\] \\( XL\\|XXL\\)" 1 'github-mode-err-face)
+      ;; highlight the enclosing brackets without changing anything else
+      ("\\[[ 0-9]\\{2\\}\\] \\[[ X]\\] .+$" 0 font-lock-comment-face keep))
+     t)))
 
 
 (provide 'github)
