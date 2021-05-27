@@ -114,7 +114,7 @@
                         (gethash "repository"
                                  (gethash "data" query))))
          (title (gethash "title" data))
-         (body (gethash "body" data))
+         (body (replace-regexp-in-string "\r" "" (gethash "body" data)))
          (branch-name (gethash "headRefName" data))
          (commit (gethash "headRefOid" data))
          (author (gethash "login" (gethash "author" data)))
