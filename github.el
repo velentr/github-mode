@@ -372,8 +372,9 @@
   '((("^commit: \\(.*\\)$" 1 font-lock-type-face)
      ("^branch: \\(.*\\)$" 1 font-lock-preprocessor-face)
      ("^author: \\(.*\\)$" 1 font-lock-constant-face)
-     ("| \\(\\+[ 0-9]\\{5\\}\\) -[ 0-9]\\{5\\}$" 1 'github-mode-ok-face)
-     ("| \\+[ 0-9]\\{5\\} \\(-[ 0-9]\\{5\\}\\)$" 1 'github-mode-err-face))))
+     ("| \\(\\+[ 0-9]+\\) -[ 0-9]+$" 1 'github-mode-ok-face)
+     ("| \\+[ 0-9]+ \\(-[ 0-9]+\\)$" 1 'github-mode-err-face))
+    t))
 
 (define-derived-mode github-mode special-mode "github"
   "Major mode for github reviews in Emacs."
