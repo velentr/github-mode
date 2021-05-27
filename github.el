@@ -354,22 +354,37 @@
   "Red face for severe warnings like XXL changes, etc."
   :group 'github-mode)
 
+(defvar github-mode-summary-font-lock-defaults
+  '((("^* outgoing$" . font-lock-function-name-face)
+     ("^* incoming$" . font-lock-function-name-face)
+     ("^ *[0-9]+" . font-lock-comment-face)
+     ("\\[\\( [1-9]\\|[1-9][0-9]\\)\\] \\[[ X]\\] " 1 'github-mode-ok-face)
+     ("\\[\\( 0\\)\\] \\[[ X]\\] " 1 'github-mode-warn-face)
+     ("\\[[ 0-9]\\{2\\}\\] \\[\\(X\\)\\] " 1 'github-mode-ok-face)
+     ("\\[[ X]\\] \\( XS\\|  S\\)" 1 'github-mode-ok-face)
+     ("\\[[ X]\\] \\(  M\\|  L\\)" 1 'github-mode-warn-face)
+     ("\\[[ X]\\] \\( XL\\|XXL\\)" 1 'github-mode-err-face)
+     ;; highlight the enclosing brackets without changing anything else
+     ("\\[[ 0-9]\\{2\\}\\] \\[[ X]\\] .+$" 0 font-lock-comment-face keep))
+    t))
+
+(defvar github-mode-pr-font-lock-defaults
+  '((("^commit: \\(.*\\)$" 1 font-lock-type-face)
+     ("^branch: \\(.*\\)$" 1 font-lock-preprocessor-face)
+     ("^author: \\(.*\\)$" 1 font-lock-constant-face)
+     ("| \\(\\+[ 0-9]\\{5\\}\\) -[ 0-9]\\{5\\}$" 1 'github-mode-ok-face)
+     ("| \\+[ 0-9]\\{5\\} \\(-[ 0-9]\\{5\\}\\)$" 1 'github-mode-err-face))))
+
 (define-derived-mode github-mode special-mode "github"
   "Major mode for github reviews in Emacs."
   (setq-local
    font-lock-defaults
-   '((("^* outgoing$" . font-lock-function-name-face)
-      ("^* incoming$" . font-lock-function-name-face)
-      ("^ *[0-9]+" . font-lock-comment-face)
-      ("\\[\\( [1-9]\\|[1-9][0-9]\\)\\] \\[[ X]\\] " 1 'github-mode-ok-face)
-      ("\\[\\( 0\\)\\] \\[[ X]\\] " 1 'github-mode-warn-face)
-      ("\\[[ 0-9]\\{2\\}\\] \\[\\(X\\)\\] " 1 'github-mode-ok-face)
-      ("\\[[ X]\\] \\( XS\\|  S\\)" 1 'github-mode-ok-face)
-      ("\\[[ X]\\] \\(  M\\|  L\\)" 1 'github-mode-warn-face)
-      ("\\[[ X]\\] \\( XL\\|XXL\\)" 1 'github-mode-err-face)
-      ;; highlight the enclosing brackets without changing anything else
-      ("\\[[ 0-9]\\{2\\}\\] \\[[ X]\\] .+$" 0 font-lock-comment-face keep))
-     t)))
+   (let ((name (buffer-name)))
+     (cond ((equal name "*github-prs*")
+            github-mode-summary-font-lock-defaults)
+           ((string-match (rx "*github-pr-" (one-or-more digit) "*") name)
+            github-mode-pr-font-lock-defaults)
+           (t nil)))))
 
 
 (provide 'github)
