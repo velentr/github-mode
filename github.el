@@ -339,11 +339,8 @@
     map)
   "Keymap for github-mode.")
 
-(define-minor-mode github-mode
-  "Minor mode for navigating github reviews in Emacs."
-  :init-value nil
-  :lighter " github"
-  :keymap github-mode-map)
+(define-derived-mode github-mode special-mode "github"
+  "Major mode for github reviews in Emacs.")
 
 
 (provide 'github)
