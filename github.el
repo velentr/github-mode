@@ -22,7 +22,24 @@
   "brian-kubisiak-skydio"
   "Github account username.")
 
-(defun gh-prs-query ()
+(defvar gh-summary-buffer-name
+  "*github-summary*"
+  "Buffer name to use for the github summary page.")
+
+(defun gh-pr-buffer-name (number)
+  "Get the buffer name for the pr NUMBER."
+  (format "*github-pr-%d*" number))
+
+(defun gh-is-pr-buffer (name)
+  "If NAME is a pr buffer, return the pr number; else, return nil."
+  (cond
+   ((string-match
+     (rx "*github-pr-" (group (one-or-more digit)) "*")
+     name)
+    (string-to-number (match-string 1 name)))
+   (t nil)))
+
+(defun gh-summary-query ()
   "Retrieve the graphql query to use for getting the pr overview."
   ;; TODO: get test results too
   (format
@@ -56,12 +73,12 @@
      }
     }" gh-owner gh-repo))
 
-(defun gh--parse-all-prs-query (query)
+(defun gh--parse-summary-query (query)
   "Parse the QUERY data from a graphql pr request."
   (let ((data (gethash "edges" (gethash "search" (gethash "data" query)))))
-    (seq-map 'gh--parse-pr-queryline data)))
+    (seq-map 'gh--parse-summary-queryline data)))
 
-(defun gh--parse-pr-queryline (queryline)
+(defun gh--parse-summary-queryline (queryline)
   "Convert QUERYLINE into a readable line for the output buffer."
   (let* ((data (gethash "node" queryline))
          (number (gethash "number" data))
@@ -108,8 +125,8 @@
      }
     }" gh-owner gh-repo number))
 
-(defun gh--parse-single-pr-query (query)
-  "Parse the QUERY result for a single pr summary."
+(defun gh--parse-pr-query (query)
+  "Parse the QUERY result for a pr."
   (let* ((data (gethash "pullRequest"
                         (gethash "repository"
                                  (gethash "data" query))))
@@ -184,15 +201,15 @@
     (goto-char (point-min))
     (json-parse-buffer)))
 
-(defun gh--load-prs ()
+(defun gh--load-summary ()
   "Query the graphql api for pr data."
-  (let ((json-data (gh--load (gh-prs-query))))
-    (gh--parse-all-prs-query json-data)))
+  (let ((json-data (gh--load (gh-summary-query))))
+    (gh--parse-summary-query json-data)))
 
 (defun gh--load-pr (number)
   "Query the graphql api for an overview of a specific pr NUMBER."
   (let ((json-data (gh--load (gh-pr-query number))))
-    (gh--parse-single-pr-query json-data)))
+    (gh--parse-pr-query json-data)))
 
 (defun gh--format-pr-title (title author)
   "Format TITLE and AUTHOR to a suitable fixed-width format for the pr buffer."
@@ -264,12 +281,10 @@
         (name (buffer-name))
         (p (point)))
     (cond
-     ((equal name "*github-prs*")
-      (gh--refresh-prs))
-     ((string-match
-       (rx "*github-pr-" (group (one-or-more digit)) "*")
-       name)
-      (gh--refresh-pr (string-to-number (match-string 1 name))))
+     ((equal name gh-summary-buffer-name)
+      (gh--refresh-summary))
+     ((gh-is-pr-buffer name)
+      (gh--refresh-pr (gh-is-pr-buffer name)))
      (t (message "unrecognized github buffer")))
     (goto-char p)))
 
@@ -278,16 +293,14 @@
   (interactive)
   (let ((name (buffer-name)))
     (cond
-     ((string-match
-       (rx "*github-pr-" (one-or-more digit) "*")
-       name)
+     ((gh-is-pr-buffer name)
       (gh-open-buffer))
      (t (message (format "can't move up from %s" name))))))
 
-(defun gh--refresh-prs ()
+(defun gh--refresh-summary ()
   "Refresh the current buffer with toplevel pr data."
   (erase-buffer)
-  (let ((pr-data (gh--load-prs)))
+  (let ((pr-data (gh--load-summary)))
     (insert "* outgoing\n\n")
     (seq-do 'gh--insert-pr-data
             (seq-filter (lambda (pr)
@@ -308,35 +321,34 @@
 (defun gh-open-buffer ()
   "Open a new github-mode buffer."
   (interactive)
-  (let ((buffer (get-buffer-create "*github-prs*")))
+  (let ((buffer (get-buffer-create gh-summary-buffer-name)))
     (switch-to-buffer buffer)
     (if (= (buffer-size buffer) 0)
-        (gh--refresh-prs))
+        (gh--refresh-summary))
     (github-mode)))
 
-(defun gh-open-pr-summary (pr-number)
+(defun gh-open-pr (pr-number)
   "Open a summary of PR-NUMBER in a new buffer."
   (interactive "npr number: ")
-  (let* ((pr-buffer-name (format "*github-pr-%d*" pr-number))
-         (buffer (get-buffer-create pr-buffer-name)))
+  (let ((buffer (get-buffer-create (gh-pr-buffer-name pr-number))))
     (switch-to-buffer buffer)
     (if (= (buffer-size buffer) 0)
         (gh--refresh-pr pr-number))
     (github-mode)))
 
-(defun gh-select-pr-summary ()
+(defun gh-select-pr ()
   "Open a pr summary for the pr specified in the line at point."
   (interactive)
   (let* ((pr-oneline (thing-at-point 'line))
          (pr-number (string-to-number pr-oneline)))
     (if (eq pr-number 0)  ;; user selected an invalid line
         nil
-      (gh-open-pr-summary pr-number))))
+      (gh-open-pr pr-number))))
 
 
 (defvar github-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-x RET") 'gh-select-pr-summary)
+    (define-key map (kbd "C-x RET") 'gh-select-pr)
     (define-key map (kbd "C-x u") 'gh-move-up-buffer)
     map)
   "Keymap for github-mode.")
@@ -383,9 +395,9 @@
   (setq-local
    font-lock-defaults
    (let ((name (buffer-name)))
-     (cond ((equal name "*github-prs*")
+     (cond ((equal name gh-summary-buffer-name)
             github-mode-summary-font-lock-defaults)
-           ((string-match (rx "*github-pr-" (one-or-more digit) "*") name)
+           ((gh-is-pr-buffer name)
             github-mode-pr-font-lock-defaults)
            (t nil)))))
 
