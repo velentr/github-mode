@@ -261,7 +261,8 @@
   "Refresh the github data in the current buffer."
   (interactive)
   (let ((inhibit-read-only t)
-        (name (buffer-name)))
+        (name (buffer-name))
+        (p (point)))
     (cond
      ((equal name "*github-prs*")
       (gh--refresh-prs))
@@ -269,7 +270,8 @@
        (rx "*github-pr-" (group (one-or-more digit)) "*")
        name)
       (gh--refresh-pr (string-to-number (match-string 1 name))))
-     (t (message "unrecognized github buffer")))))
+     (t (message "unrecognized github buffer")))
+    (goto-char p)))
 
 (defun gh-move-up-buffer ()
   "Move 'up' one level in the page heirarchy."
