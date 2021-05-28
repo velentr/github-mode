@@ -90,7 +90,7 @@
       pullRequest(number:%d) {
        title
        body
-       headRefName
+       baseRefName
        headRefOid
        author {
         login
@@ -115,7 +115,7 @@
                                  (gethash "data" query))))
          (title (gethash "title" data))
          (body (replace-regexp-in-string "\r" "" (gethash "body" data)))
-         (branch-name (gethash "headRefName" data))
+         (branch-name (gethash "baseRefName" data))
          (commit (gethash "headRefOid" data))
          (author (gethash "login" (gethash "author" data)))
          (files (gethash "edges" (gethash "files" data))))
