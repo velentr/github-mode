@@ -42,36 +42,24 @@
 (defun gh-summary-query ()
   "Retrieve the graphql query to use for getting the pr overview."
   ;; TODO: get test results too
-  (format
-   "query {
-     search(last:100, query:\"is:pr is:open involves:@me repo:%s/%s\", type:ISSUE) {
-      edges {
-       node {
-       ... on PullRequest {
-        author {
-         login
-        }
-        title
-        labels(last:4) {
-         edges {
-          node {
-           name
-          }
-         }
-        }
-        number
-        reviews(last:100) {
-         edges {
-          node {
-           state
-          }
-         }
-        }
-       }
-       }
-      }
-     }
-    }" gh-owner gh-repo))
+  (let ((querystring
+         (format "query:\"is:pr is:open involves:@me repo:%s/%s\"" gh-owner gh-repo)))
+    (gql-query `("query"
+                 (("search" "last:100" ,querystring "type:ISSUE")
+                  ("edges"
+                   ("node"
+                    ("... on PullRequest"
+                     ("author" "login")
+                     "title"
+                     (("labels" "last:4")
+                      ("edges"
+                       ("node"
+                        "name")))
+                     "number"
+                     (("reviews" "last:100")
+                      ("edges"
+                       ("node"
+                        "state")))))))))))
 
 (defun gh--parse-summary-query (query)
   "Parse the QUERY data from a graphql pr request."
@@ -101,29 +89,23 @@
 
 (defun gh-pr-query (number)
   "Retrieve the graphql query for getting an overview of a specific pr NUMBER."
-  (format
-   "query {
-     repository(owner:\"%s\", name:\"%s\") {
-      pullRequest(number:%d) {
-       title
-       body
-       baseRefName
-       headRefOid
-       author {
-        login
-       }
-       files(first:100) {
-        edges {
-         node {
-          path
-          additions
-          deletions
-         }
-        }
-       }
-      }
-     }
-    }" gh-owner gh-repo number))
+  (let ((ownerstring (format "owner:\"%s\"" gh-owner))
+        (repostring (format "name:\"%s\"" gh-repo))
+        (prnumber (format "number:%d" number)))
+    (gql-query `("query"
+                 (("repository" ,ownerstring ,repostring)
+                  (("pullRequest" ,prnumber)
+                   "title"
+                   "body"
+                   "baseRefName"
+                   "headRefOid"
+                   ("author" "login")
+                   (("files" "first:100")
+                    ("edges"
+                     ("node"
+                      "path"
+                      "additions"
+                      "deletions")))))))))
 
 (defun gh--parse-pr-query (query)
   "Parse the QUERY result for a pr."
@@ -401,6 +383,23 @@
             github-mode-pr-font-lock-defaults)
            (t nil)))))
 
+
+
+(defun gql-query (query-struct)
+  "Generate a graphql query string for the given QUERY-STRUCT."
+  (cond
+   ((stringp query-struct)
+    query-struct)
+   ((listp query-struct)
+    (let* ((node (car query-struct))
+           (node-string
+            (cond
+             ((stringp node)
+              node)
+             ((listp node)
+              (format "%s(%s)" (car node) (mapconcat 'identity (cdr node) ",")))))
+           (elts (mapconcat 'identity (seq-map 'gql-query (cdr query-struct)) " ")))
+      (format "%s { %s }" node-string elts)))))
 
 (provide 'github)
 
