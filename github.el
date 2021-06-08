@@ -135,7 +135,7 @@
   "Remove merge-queue and size from LABELS."
   (seq-filter
    (lambda (label)
-     (not (or (equal "merge-queue" label)
+     (not (or (equal "1 merge-queue" label)
               (string-prefix-p "size/" label))))
    labels))
 
@@ -143,7 +143,7 @@
   "Check if LABELS contain the merge-queue label."
   (seq-some
    (lambda (label)
-     (equal label "merge-queue"))
+     (equal label "1 merge-queue"))
    labels))
 
 (defun gh--pr-size (labels)
