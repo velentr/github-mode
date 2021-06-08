@@ -10,6 +10,8 @@
 
 ;;; Code:
 
+(require 'seq)
+
 (defvar gh-owner
   "Skydio"
   "Owner of the github repo to query for reviews.")
