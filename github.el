@@ -45,7 +45,9 @@
   "Retrieve the graphql query to use for getting the pr overview."
   ;; TODO: get test results too
   (let ((querystring
-         (format "query:\"is:pr is:open involves:@me repo:%s/%s\"" gh-owner gh-repo)))
+         (format
+          "query:\"is:pr is:open involves:@me repo:%s/%s sort:updated-desc\""
+          gh-owner gh-repo)))
     (gql-query `("query"
                  (("search" "last:100" ,querystring "type:ISSUE")
                   ("edges"
