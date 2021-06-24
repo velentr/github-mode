@@ -260,6 +260,23 @@
         (deletions (caddr file)))
     (format "%-80s | +%5d -%5d\n" path additions deletions)))
 
+(defun gh-mergequeue ()
+  "Add a change to the merge queue."
+  (interactive)
+  (let* ((name (buffer-name))
+         (pr-number
+          (cond
+           ((equal name gh-summary-buffer-name)
+            (string-to-number (thing-at-point 'line)))
+           ((gh-is-pr-buffer name)
+            (gh-is-pr-buffer name)))))
+    (if (not (equal nil pr-number))
+        (call-process "gh" nil t nil
+                      "pr"
+                      "edit"
+                      (format "%d" pr-number)
+                      "--add-label" "1 merge-queue"))))
+
 (defun gh-refresh-buffer ()
   "Refresh the github data in the current buffer."
   (interactive)
