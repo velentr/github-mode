@@ -271,7 +271,8 @@
            ((gh-is-pr-buffer name)
             (gh-is-pr-buffer name)))))
     (if (not (equal nil pr-number))
-        (call-process "gh" nil t nil
+        (call-process "gh" nil nil nil
+                      "--repo" (format "%s/%s" gh-owner gh-repo)
                       "pr"
                       "edit"
                       (format "%d" pr-number)
