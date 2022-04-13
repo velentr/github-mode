@@ -55,7 +55,7 @@
                     ("... on PullRequest"
                      ("author" "login")
                      "title"
-                     (("labels" "last:4")
+                     (("labels" "last:8")
                       ("edges"
                        ("node"
                         "name")))
